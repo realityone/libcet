@@ -125,6 +125,8 @@ class CETConfig(object):
 
 
 class CETTicket(object):
+    Configure = CETConfig
+
     def __init__(self, crypter):
         self.crypter = crypter
 
@@ -141,16 +143,16 @@ class CETTicket(object):
                     2 ==> cet6
         """
 
-        province_id = CETConfig.province_id(province)
+        province_id = self.Configure.province_id(province)
         param_data = 'type=%d&provice=%d&school=%s&name=%s&examroom=%s&m=%s' % (
             cet_type, province_id, school, name, examroom, random_mac())
         param_data = param_data.decode('utf-8').encode('gbk')
         encrypted_data = self.crypter.encrypt_request_data(param_data)
 
         resp = requests.post(
-            url=CETConfig.SEARCH_URL,
+            url=self.Configure.SEARCH_URL,
             data=encrypted_data,
-            headers={'User-Agent': CETConfig.user_agent()})
+            headers={'User-Agent': self.Configure.user_agent()})
         ticket_number = self.crypter.decrypt_ticket_number(resp.content)
         if ticket_number == '':
             raise TicketNotFound('Cannot find ticket number.')
