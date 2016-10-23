@@ -12,7 +12,7 @@ except ImportError:
 
 import consts
 
-__all__ = ['CETCipher', 'CETTypes', 'CETConfig', 'CETTicket']
+__all__ = ['CETCrypter', 'CETTypes', 'CETConfig', 'CETTicket']
 
 
 def random_mac():
@@ -35,7 +35,7 @@ class DES_key_schedule(ctypes.Structure):
     _fields_ = [('ks', ks * 16), ]
 
 
-class CETCipher(object):
+class CETCrypter(object):
     DECRYPT = 0
     ENCRYPT = 1
 
@@ -69,7 +69,7 @@ class CETCipher(object):
 
         indata = ctypes.create_string_buffer(indata, length)
         outdata = ctypes.create_string_buffer(length)
-        n = c_int(0)
+        n = ctypes.c_int(0)
         key = DES_cblock(*tuple(key))
         key_schedule = DES_key_schedule()
         self.libcrypto.DES_set_odd_parity(key)
@@ -125,14 +125,8 @@ class CETConfig(object):
 
 
 class CETTicket(object):
-    """
-        usage:
-        ct = CETTicket()
-        print ct.find_ticket_number(u'浙江', u'浙江海洋学院', u'XXX', cet_type=2)
-    """
-
-    def __init__(self, cipher):
-        self.cipher = cipher
+    def __init__(self, crypter):
+        self.crypter = crypter
 
     def find_ticket_number(self,
                            province,
@@ -148,16 +142,16 @@ class CETTicket(object):
         """
 
         province_id = CETConfig.province_id(province)
-        param_data = u'type=%d&provice=%d&school=%s&name=%s&examroom=%s&m=%s' % (
+        param_data = 'type=%d&provice=%d&school=%s&name=%s&examroom=%s&m=%s' % (
             cet_type, province_id, school, name, examroom, random_mac())
-        param_data = param_data.encode('gbk')
-        encrypted_data = self.cipher.encrypt_request_data(param_data)
+        param_data = param_data.decode('utf-8').encode('gbk')
+        encrypted_data = self.crypter.encrypt_request_data(param_data)
 
         resp = requests.post(
             url=CETConfig.SEARCH_URL,
             data=encrypted_data,
             headers={'User-Agent': CETConfig.user_agent()})
-        ticket_number = self.cipher.decrypt_ticket_number(resp.content)
+        ticket_number = self.crypter.decrypt_ticket_number(resp.content)
         if ticket_number == '':
             raise TicketNotFound('Cannot find ticket number.')
 
