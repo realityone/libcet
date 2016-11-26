@@ -10,7 +10,7 @@ pip install https://github.com/realityone/libcet/zip/master
 
 ## Usage
 
-```
+```python
 # encoding=utf-8
 
 from libcet import cet
